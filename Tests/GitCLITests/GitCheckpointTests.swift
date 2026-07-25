@@ -211,6 +211,43 @@ final class GitCheckpointTests: XCTestCase {
         XCTAssertFalse(Git.anchorCheckpoint(sha, id: "///", repoRoot: root))
     }
 
+    // MARK: - Merge base
+
+    func testDefaultBranchMergeBaseFindsTheForkPoint() throws {
+        let root = try seededRepo()
+        let base = try XCTUnwrap(Git.run(["rev-parse", "HEAD"], in: root))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        _ = Git.run(["checkout", "-q", "-b", "feature"], in: root)
+        try write("feature work\n", to: "tracked.txt", in: root)
+        _ = Git.run(["add", "-A"], in: root)
+        _ = Git.run(["commit", "-q", "-m", "feature"], in: root)
+
+        // seededRepo's initial branch is whatever git defaults to; the resolver tries
+        // origin/HEAD, then main, then master.
+        XCTAssertEqual(Git.defaultBranchMergeBase(repoRoot: root), base)
+    }
+
+    func testBranchScopeSpansCommittedUncommittedAndUntracked() throws {
+        let root = try seededRepo()
+        _ = Git.run(["checkout", "-q", "-b", "feature"], in: root)
+        try write("committed\n", to: "committed.txt", in: root)
+        _ = Git.run(["add", "-A"], in: root)
+        _ = Git.run(["commit", "-q", "-m", "one"], in: root)
+        try write("uncommitted\n", to: "tracked.txt", in: root)
+        try write("untracked\n", to: "loose.txt", in: root)
+
+        let base = try XCTUnwrap(Git.defaultBranchMergeBase(repoRoot: root))
+        // `to: nil` snapshots the working tree, so branch scope covers everything the branch
+        // did — including work not yet committed or added.
+        let paths = Set(Git.checkpointChangedFiles(from: base, to: nil, repoRoot: root).map(\.path))
+        XCTAssertEqual(paths, ["committed.txt", "tracked.txt", "loose.txt"])
+    }
+
+    func testMergeBaseIsNilForAnUnrelatedRef() throws {
+        let root = try seededRepo()
+        XCTAssertNil(Git.mergeBase(with: "does-not-exist", repoRoot: root))
+    }
+
     // MARK: - Pruning
 
     func testPruneKeepsTheNewestAndDropsTheRest() throws {
