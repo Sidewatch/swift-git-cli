@@ -46,6 +46,13 @@ public extension Git {
         }
         let env = ["GIT_INDEX_FILE": indexPath]
 
+        // Seed from HEAD first. `git add -A` into an EMPTY index skips a tracked-but-ignored
+        // file (one committed before its path was added to .gitignore — .vscode/settings.json,
+        // a checked-in dist/), because add only re-adds an ignored path already in the index.
+        // Without this the file is missing from every checkpoint tree, so it shows as a phantom
+        // deletion against any real commit and a turn's edits to it are invisible.
+        // A repo with no commits has no HEAD; there is nothing to seed from, which is correct.
+        _ = run(["read-tree", "HEAD"], in: repoRoot, environment: env)
         guard run(["add", "-A"], in: repoRoot, environment: env) != nil,
               let tree = trimmed(run(["write-tree"], in: repoRoot, environment: env))
         else { return nil }
@@ -114,8 +121,21 @@ public extension Git {
     ///   - repoRoot: The repository to diff in.
     /// - Returns: The unified diff, empty when nothing changed, or `nil` on failure.
     static func checkpointDiff(from: String, to: String?, path: String? = nil, repoRoot: URL) -> String? {
-        guard let target = resolvedDiffTarget(to, repoRoot: repoRoot) else { return nil }
-        var args = ["diff", from, target]
+        // Working-tree comparison: diff directly and splice in untracked files, rather than
+        // snapshotting. Building an ephemeral checkpoint here re-hashed the ENTIRE working tree
+        // and wrote an unreferenced tree+commit into .git/objects on every git tick that a
+        // still-open turn tab refreshed on.
+        guard let target = to else {
+            var diff = run(["-c", "core.quotePath=false", "diff", "--no-color", from], in: repoRoot) ?? ""
+            let untracked = run(["-c", "core.quotePath=false", "ls-files", "--others",
+                                 "--exclude-standard", "-z"], in: repoRoot) ?? ""
+            for file in untracked.split(separator: "\0").map(String.init) {
+                if let path, file != path { continue }
+                diff += untrackedDiff(for: repoRoot.appendingPathComponent(file), repoRoot: repoRoot)
+            }
+            return diff
+        }
+        var args = ["-c", "core.quotePath=false", "diff", from, target]
         if let path { args += ["--", path] }
         return run(args, in: repoRoot)
     }
@@ -132,8 +152,25 @@ public extension Git {
     /// - Returns: Repo-relative paths with their change kind, in git's order.
     static func checkpointChangedFiles(from: String, to: String?,
                                        repoRoot: URL) -> [(path: String, kind: GitChangeKind)] {
-        guard let target = resolvedDiffTarget(to, repoRoot: repoRoot),
-              let out = run(["diff", "--name-status", from, target], in: repoRoot) else { return [] }
+        // Same reasoning as `checkpointDiff`: compare against the working tree directly and add
+        // untracked files, instead of hashing the whole tree into a throwaway commit.
+        guard let target = to else {
+            var files = changedFiles(rawNameStatus: run(["-c", "core.quotePath=false", "diff",
+                                                         "--name-status", from], in: repoRoot))
+            let untracked = run(["-c", "core.quotePath=false", "ls-files", "--others",
+                                 "--exclude-standard", "-z"], in: repoRoot) ?? ""
+            files += untracked.split(separator: "\0").map { (path: String($0), kind: GitChangeKind.added) }
+            return files
+        }
+        // core.quotePath=false: without it a path with non-ASCII characters comes back C-quoted
+        // ("\303\251"), which no caller can open.
+        return changedFiles(rawNameStatus: run(["-c", "core.quotePath=false", "diff",
+                                                "--name-status", from, target], in: repoRoot))
+    }
+
+    /// Parses `git diff --name-status` output.
+    private static func changedFiles(rawNameStatus: String?) -> [(path: String, kind: GitChangeKind)] {
+        guard let out = rawNameStatus else { return [] }
         return out.split(separator: "\n").compactMap { line in
             let parts = line.components(separatedBy: "\t")
             guard parts.count >= 2, let status = parts[0].first else { return nil }
@@ -171,17 +208,6 @@ public extension Git {
             dropped.append(String(ref.dropFirst(checkpointRefPrefix.count)))
         }
         return dropped
-    }
-
-    /// The commit to diff *to*: the one given, or an ephemeral snapshot of the working tree.
-    ///
-    /// A bare `git diff <commit>` cannot serve the working-tree case: it ignores untracked
-    /// files, so the files a turn *created* — the most common thing an agent does — would
-    /// silently vanish from its diff. Snapshotting into a throwaway commit keeps every case on
-    /// the same commit-to-commit path. The snapshot is deliberately left unanchored: it is
-    /// consumed immediately, and letting git collect it is the correct lifetime.
-    private static func resolvedDiffTarget(_ to: String?, repoRoot: URL) -> String? {
-        to ?? createCheckpoint(repoRoot: repoRoot)
     }
 
     /// `out` stripped of surrounding whitespace, or `nil` when it is absent or empty.

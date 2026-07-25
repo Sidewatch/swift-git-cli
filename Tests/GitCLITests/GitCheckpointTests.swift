@@ -157,6 +157,76 @@ final class GitCheckpointTests: XCTestCase {
         XCTAssertTrue(diff.contains("edited by the agent"))
     }
 
+    func testTrackedButIgnoredFilesSurviveTheCheckpoint() throws {
+        // A file committed BEFORE its path was ignored stays tracked. `git add -A` into an empty
+        // scratch index skips it, so it vanished from every checkpoint tree and showed as a
+        // phantom deletion against any real commit — and a turn's edits to it were invisible.
+        let root = try seededRepo()
+        try write("{}\n", to: ".vscode/settings.json", in: root)
+        _ = Git.run(["add", "-A"], in: root)
+        _ = Git.run(["commit", "-q", "-m", "add vscode"], in: root)
+        try write(".vscode/\n", to: ".gitignore", in: root)
+        _ = Git.run(["add", "-A"], in: root)
+        _ = Git.run(["commit", "-q", "-m", "ignore vscode"], in: root)
+
+        let sha = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        let changed = Git.checkpointChangedFiles(from: "HEAD", to: sha, repoRoot: root)
+        XCTAssertFalse(changed.contains { $0.path == ".vscode/settings.json" },
+                       "tracked-but-ignored file reported as changed: \(changed)")
+
+        // And an edit to it inside a checkpoint range must still be visible.
+        let before = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        try write("{\"changed\":true}\n", to: ".vscode/settings.json", in: root)
+        let after = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        XCTAssertEqual(Git.checkpointChangedFiles(from: before, to: after, repoRoot: root).map(\.path),
+                       [".vscode/settings.json"])
+    }
+
+    func testWorkingTreeComparisonDoesNotWriteObjects() throws {
+        // The working-tree comparison used to snapshot the whole tree into a throwaway commit,
+        // which an open turn tab re-ran on EVERY git tick, writing unreferenced objects each time.
+        let root = try seededRepo()
+        let start = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        try write("edited\n", to: "tracked.txt", in: root)
+        try write("new\n", to: "fresh.txt", in: root)
+
+        func objectCount() -> Int {
+            Int(Git.run(["count-objects", "-v"], in: root)?
+                .split(separator: "\n")
+                .first(where: { $0.hasPrefix("count:") })?
+                .split(separator: " ").last.map(String.init) ?? "0") ?? 0
+        }
+        let before = objectCount()
+        for _ in 0..<3 {
+            _ = Git.checkpointChangedFiles(from: start, to: nil, repoRoot: root)
+            _ = Git.checkpointDiff(from: start, to: nil, repoRoot: root)
+        }
+        XCTAssertEqual(objectCount(), before, "working-tree comparison wrote objects into .git")
+    }
+
+    func testWorkingTreeComparisonStillReportsUntrackedFiles() throws {
+        // The reason the snapshot existed: a bare `git diff <commit>` ignores untracked files.
+        let root = try seededRepo()
+        let start = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        try write("edited\n", to: "tracked.txt", in: root)
+        try write("created by the agent\n", to: "fresh.txt", in: root)
+
+        let byPath = Dictionary(uniqueKeysWithValues:
+            Git.checkpointChangedFiles(from: start, to: nil, repoRoot: root).map { ($0.path, $0.kind) })
+        XCTAssertEqual(byPath["tracked.txt"], .modified)
+        XCTAssertEqual(byPath["fresh.txt"], .added)
+        let diff = try XCTUnwrap(Git.checkpointDiff(from: start, to: nil, repoRoot: root))
+        XCTAssertTrue(diff.contains("created by the agent"))
+    }
+
+    func testNonASCIIPathsAreNotCQuoted() throws {
+        let root = try seededRepo()
+        let start = try XCTUnwrap(Git.createCheckpoint(repoRoot: root))
+        try write("x\n", to: "café/naïve.txt", in: root)
+        let paths = Git.checkpointChangedFiles(from: start, to: nil, repoRoot: root).map(\.path)
+        XCTAssertTrue(paths.contains("café/naïve.txt"), "got \(paths)")
+    }
+
     // MARK: - Anchoring
 
     func testAnchoredCheckpointSurvivesAggressiveGC() throws {
