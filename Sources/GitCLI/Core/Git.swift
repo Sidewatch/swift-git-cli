@@ -85,6 +85,38 @@ public enum Git {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Runs `git <args>` like ``run(_:in:allowedStatuses:)`` with extra environment variables
+    /// layered over the process environment.
+    ///
+    /// Needed for the plumbing commands that are steered by the environment rather than by
+    /// flags — chiefly `GIT_INDEX_FILE`, which lets ``createCheckpoint(repoRoot:)`` stage the
+    /// working tree into a scratch index without disturbing the real one.
+    ///
+    /// - Parameters:
+    ///   - args: Arguments passed to `git`.
+    ///   - dir: Working directory the command runs in.
+    ///   - environment: Variables layered over (and overriding) the inherited environment.
+    ///   - allowedStatuses: Non-zero exit statuses to accept alongside 0.
+    /// - Returns: The command's standard output decoded as UTF-8, or `nil` on failure.
+    public static func run(_ args: [String], in dir: URL,
+                           environment: [String: String],
+                           allowedStatuses: Set<Int32> = []) -> String? {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: executable)
+        p.arguments = args
+        p.currentDirectoryURL = dir
+        p.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        let out = Pipe()
+        p.standardOutput = out
+        // Same stderr contract as `run(_:in:allowedStatuses:)` — see the note there.
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return nil }
+        let data = out.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        guard p.terminationStatus == 0 || allowedStatuses.contains(p.terminationStatus) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
     /// The repository root containing `dir`, or `nil` if `dir` is not inside a git repo.
     ///
     /// - Parameter dir: A file or directory URL. If a file is passed, its parent
