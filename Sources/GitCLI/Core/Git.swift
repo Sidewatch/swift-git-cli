@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import Subprocess
 
 /// A thin wrapper over the `git` command-line tool.
 ///
@@ -79,29 +80,27 @@ public enum Git {
     /// - Returns: The command's standard output decoded as UTF-8, or `nil` if the
     ///   process failed to launch or exited with a status outside the allowed set.
     public static func run(_ args: [String], in dir: URL, allowedStatuses: Set<Int32>) -> String? {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: executable)
-        p.arguments = args
-        p.currentDirectoryURL = dir
-        let out = Pipe()
-        p.standardOutput = out
-        // Discard stderr outright. Attaching a Pipe that is never drained deadlocks
-        // once git writes ~64KB of warnings: the child blocks in write(2) on stderr
-        // while we block reading stdout to EOF, and neither ever progresses.
-        p.standardError = FileHandle.nullDevice
-        do { try p.run() } catch { return nil }
-        let data = out.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 || allowedStatuses.contains(p.terminationStatus) else { return nil }
-        return String(data: data, encoding: .utf8)
+        run(args, in: dir, environment: [:], allowedStatuses: allowedStatuses)
     }
 
     /// Runs `git <args>` like ``run(_:in:allowedStatuses:)`` with extra environment variables
-    /// layered over the process environment.
+    /// layered over the process environment — and is the single place `git` is launched.
     ///
-    /// Needed for the plumbing commands that are steered by the environment rather than by
-    /// flags — chiefly `GIT_INDEX_FILE`, which lets ``createCheckpoint(repoRoot:)`` stage the
-    /// working tree into a scratch index without disturbing the real one.
+    /// The environment overload is needed for plumbing commands steered by the environment
+    /// rather than by flags — chiefly `GIT_INDEX_FILE`, which lets ``createCheckpoint(repoRoot:)``
+    /// stage the working tree into a scratch index without disturbing the real one.
+    ///
+    /// Delegates to ``Subprocess`` rather than driving `Process` directly. This used to be two
+    /// near-identical hand-rolled runners differing only in whether they merged an environment,
+    /// each carrying its own copy of the "never attach an undrained pipe" reasoning. That
+    /// warning was correct and load-bearing — an undrained stderr pipe deadlocks once git
+    /// writes ~64 KB of warnings — but a rule re-stated per copy is a rule waiting to be
+    /// dropped from the next copy, which is exactly how the deadlock reached `GitHubCLI`.
+    /// `Subprocess` drains both streams concurrently as its only shape, so the trap is
+    /// structurally unavailable here now.
+    ///
+    /// stderr is still discarded, just at the boundary rather than at the pipe: it is drained
+    /// (so it cannot block) and then dropped, because these callers want output or nothing.
     ///
     /// - Parameters:
     ///   - args: Arguments passed to `git`.
@@ -112,20 +111,12 @@ public enum Git {
     public static func run(_ args: [String], in dir: URL,
                            environment: [String: String],
                            allowedStatuses: Set<Int32> = []) -> String? {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: executable)
-        p.arguments = args
-        p.currentDirectoryURL = dir
-        p.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
-        let out = Pipe()
-        p.standardOutput = out
-        // Same stderr contract as `run(_:in:allowedStatuses:)` — see the note there.
-        p.standardError = FileHandle.nullDevice
-        do { try p.run() } catch { return nil }
-        let data = out.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 || allowedStatuses.contains(p.terminationStatus) else { return nil }
-        return String(data: data, encoding: .utf8)
+        let result = Subprocess.run(executable, args,
+                                    directory: dir,
+                                    environment: environment)
+        guard result.launched else { return nil }
+        guard result.status == 0 || allowedStatuses.contains(result.status) else { return nil }
+        return result.outputText
     }
 
     /// The repository root containing `dir`, or `nil` if `dir` is not inside a git repo.

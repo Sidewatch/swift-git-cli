@@ -50,18 +50,13 @@ public extension Git {
             if line.hasPrefix("@@") {
                 flush()
                 inHunk = true
-                // @@ -oldStart[,oldCount] +newStart[,newCount] @@
-                let parts = line.split(separator: " ")
-                guard parts.count >= 3 else { continue }
-                let oldCount = counts(parts[1]).1
-                let (newStart, newCount) = counts(parts[2])
-                if newCount == 0 {
-                    marks[max(1, newStart)] = .deleted            // pure deletion
-                    anchor = max(1, newStart + 1)                 // after a pure deletion
+                guard let hunk = HunkHeader.parse(line) else { continue }
+                if hunk.changeKind == .deleted {
+                    marks[max(1, hunk.newStart)] = .deleted       // pure deletion
+                    anchor = max(1, hunk.newStart + 1)            // after a pure deletion
                 } else {
-                    let kind: GitChangeKind = oldCount == 0 ? .added : .modified
-                    for l in newStart..<(newStart + newCount) { marks[l] = kind }
-                    anchor = newStart                             // above the first new line
+                    for l in hunk.newLineRange { marks[l] = hunk.changeKind }
+                    anchor = hunk.newStart                        // above the first new line
                 }
             } else if inHunk, line.hasPrefix("-") {
                 pending.append(String(line.dropFirst()))   // removed content (even if it starts with "--")
@@ -116,16 +111,11 @@ public extension Git {
             if !inHunk, line.hasPrefix("+++ ") { bPath = headerPath(line.dropFirst(4)); continue }
             guard line.hasPrefix("@@") else { continue }
             inHunk = true
-            guard let path = bPath ?? aPath else { continue }
-            let parts = line.split(separator: " ")
-            guard parts.count >= 3 else { continue }
-            let oldCount = counts(parts[1]).1
-            let (newStart, newCount) = counts(parts[2])
-            if newCount == 0 {
-                all[path, default: [:]][max(1, newStart)] = .deleted
+            guard let path = bPath ?? aPath, let hunk = HunkHeader.parse(line) else { continue }
+            if hunk.changeKind == .deleted {
+                all[path, default: [:]][max(1, hunk.newStart)] = .deleted
             } else {
-                let kind: GitChangeKind = oldCount == 0 ? .added : .modified
-                for l in newStart..<(newStart + newCount) { all[path, default: [:]][l] = kind }
+                for l in hunk.newLineRange { all[path, default: [:]][l] = hunk.changeKind }
             }
         }
         return all
