@@ -85,6 +85,34 @@ final class GitCLITests: XCTestCase {
         XCTAssertNil(Git.relativePathIfUnderRoot(outside, root: root))
     }
 
+    /// THE SIBLING-PREFIX TRAP. A `hasPrefix(root)` test with no trailing separator accepts
+    /// any sibling whose name merely STARTS with the root's name — and this app creates
+    /// exactly those: linked worktrees live at `<root>-<branch>`. Two hand-rolled copies in
+    /// the app had this bug, one of them keying review notes, so `/proj-feature/src/a.swift`
+    /// against `/proj` produced `-feature/src/a.swift` instead of refusing the path.
+    func testSiblingDirectorySharingTheRootsNamePrefixIsNotUnderRoot() {
+        let root = URL(fileURLWithPath: "/tmp/sw-proj")
+        let sibling = URL(fileURLWithPath: "/tmp/sw-proj-feature/src/a.swift")
+        XCTAssertNil(Git.relativePathIfUnderRoot(sibling, root: root),
+                     "a sibling worktree must not be treated as inside the root")
+        XCTAssertEqual(Git.relativePath(sibling, root: root), "a.swift",
+                       "and it must fall back to the basename, not a garbled relative path")
+    }
+
+    /// The root itself is not "a path under the root" — there is no relative path to give,
+    /// and returning "" would read as a valid empty filename downstream.
+    func testRootItselfIsNotUnderRoot() {
+        let root = URL(fileURLWithPath: "/tmp/sw-proj")
+        XCTAssertNil(Git.relativePathIfUnderRoot(root, root: root))
+    }
+
+    /// A trailing slash on either side is cosmetic and must not change the answer.
+    func testTrailingSlashesAreIrrelevant() {
+        let root = URL(fileURLWithPath: "/tmp/sw-proj/")
+        let file = URL(fileURLWithPath: "/tmp/sw-proj/src/a.swift")
+        XCTAssertEqual(Git.relativePathIfUnderRoot(file, root: root), "src/a.swift")
+    }
+
     func testRelativePathReconcilesPrivateVarSymlinkForDeletedFile() throws {
         // Regression: git reports roots in the resolved `/private/var/...` form,
         // but `standardizedFileURL` only strips `/private` for paths that EXIST —
