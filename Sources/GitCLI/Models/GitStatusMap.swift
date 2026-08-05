@@ -20,7 +20,7 @@ import Foundation
 /// `/private`-prefixed) so the macOS `/private/var` ↔ `/var` aliasing never
 /// makes a lookup miss — the same gotcha GitCLI's canonical-path handling
 /// reconciles elsewhere.
-public struct GitStatusMap: Equatable {
+public struct GitStatusMap: Equatable, Sendable {
 
     public static let empty = GitStatusMap(kinds: [:], changedDirs: [])
 

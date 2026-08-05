@@ -41,7 +41,18 @@ public enum Git {
     ///
     /// Defaults to the system git at `/usr/bin/git` (the Command Line Tools shim
     /// on macOS). Point it elsewhere before making calls to use a different git.
-    public static var executable = "/usr/bin/git"
+    ///
+    /// Lock-guarded because every `git` call reads it, and those calls run on background
+    /// queues while the setter is a start-up/preferences concern on the main thread. A
+    /// `String` is a struct with a reference-counted buffer, so an unsynchronized swap
+    /// racing a read is a memory-safety problem and not just a stale path.
+    public static var executable: String {
+        get { lock.lock(); defer { lock.unlock() }; return storedExecutable }
+        set { lock.lock(); defer { lock.unlock() }; storedExecutable = newValue }
+    }
+
+    private static let lock = NSLock()
+    private nonisolated(unsafe) static var storedExecutable = "/usr/bin/git"
 
     /// Runs `git <args>` in `dir` and returns standard output.
     ///
