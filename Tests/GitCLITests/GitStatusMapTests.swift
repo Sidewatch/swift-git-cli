@@ -28,12 +28,23 @@ final class GitStatusMapTests: XCTestCase {
     /// every root alias (/tmp + /private/tmp) for O(1) lookups, but a list with
     /// one entry per alias doubled search rows and made targeted replace report
     /// phantom failures.
-    func testChangedFilePathsAreDeduplicatedAcrossRootAliases() {
+    func testChangedFilePathsAreDeduplicatedAcrossRootAliases() throws {
+        // A REAL root behind the /private/var ↔ /var symlink — the fabricated
+        // "/repo" fixture has one alias, which let a broken (alias-expanded)
+        // list pass this test. Skip only if this system somehow doesn't alias.
+        let aliasedRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("gitmap-dedupe-\(ProcessInfo.processInfo.processIdentifier)")
+        try FileManager.default.createDirectory(at: aliasedRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: aliasedRoot) }
+        let std = aliasedRoot.standardizedFileURL.path
+        let resolved = (std as NSString).resolvingSymlinksInPath
+        try XCTSkipIf(std == resolved && !FileManager.default.fileExists(atPath: "/private" + std),
+                      "root does not alias on this system")
+
         let map = GitStatusMap.build(status: [("src/a.swift", .modified), ("b.swift", .added)],
-                                     repoRoot: root)
+                                     repoRoot: aliasedRoot)
         XCTAssertEqual(map.changedFilePaths.count, 2,
                        "one entry per FILE, not per root alias: \(map.changedFilePaths)")
-        // Every listed path still resolves through the aliased lookup table.
         for p in map.changedFilePaths {
             XCTAssertNotNil(map.kind(for: URL(fileURLWithPath: p)), p)
         }
