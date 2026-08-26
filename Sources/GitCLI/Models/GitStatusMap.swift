@@ -22,16 +22,22 @@ import Foundation
 /// reconciles elsewhere.
 public struct GitStatusMap: Equatable, Sendable {
 
-    public static let empty = GitStatusMap(kinds: [:], changedDirs: [])
+    public static let empty = GitStatusMap(kinds: [:], changedDirs: [], canonicalPaths: [])
 
     /// Absolute file path → change kind (no `.deleted` entries).
     private let kinds: [String: GitChangeKind]
     /// Absolute path of every directory containing (at any depth) a changed file.
     private let changedDirs: Set<String>
+    /// ONE path per changed file (the standardized-root alias). `kinds` keys each
+    /// file under every root alias for O(1) lookups — correct for lookups, wrong
+    /// as a file LIST: a /tmp repo listed every file twice (/tmp + /private/tmp),
+    /// doubling search rows and making targeted replace report phantom failures.
+    private let canonicalPaths: [String]
 
-    init(kinds: [String: GitChangeKind], changedDirs: Set<String>) {
+    init(kinds: [String: GitChangeKind], changedDirs: Set<String>, canonicalPaths: [String]) {
         self.kinds = kinds
         self.changedDirs = changedDirs
+        self.canonicalPaths = canonicalPaths
     }
 
     /// The change kind for a file URL, or nil when the file is unchanged.
@@ -41,7 +47,7 @@ public struct GitStatusMap: Equatable, Sendable {
 
     /// Absolute paths of every changed file — the "search the agent's changes"
     /// scope. Sorted so consumers get a stable order.
-    public var changedFilePaths: [String] { kinds.keys.sorted() }
+    public var changedFilePaths: [String] { canonicalPaths }
 
     /// Whether the directory at `url` contains (at any depth) a changed file.
     public func directoryContainsChanges(_ url: URL) -> Bool {
@@ -67,6 +73,8 @@ public struct GitStatusMap: Equatable, Sendable {
 
         var kinds: [String: GitChangeKind] = [:]
         var dirs: Set<String> = []
+        let canonicalRoot = repoRoot.standardizedFileURL.path
+        var canonical: [String] = []
         for entry in live {
             // Defensive: without `-uall`, `git status` collapses an untracked
             // directory to a single trailing-slash entry ("?? NewFeature/").
@@ -78,6 +86,7 @@ public struct GitStatusMap: Equatable, Sendable {
             let isDirEntry = entry.path.hasSuffix("/")
             let path = isDirEntry ? String(entry.path.dropLast()) : entry.path
             guard !path.isEmpty else { continue }
+            if !isDirEntry { canonical.append(canonicalRoot + "/" + path) }
             for root in roots {
                 if isDirEntry {
                     dirs.insert(root + "/" + path)   // the untracked folder itself gets a dot
@@ -92,6 +101,6 @@ public struct GitStatusMap: Equatable, Sendable {
                 dirs.insert(root)   // the root folder itself contains changes
             }
         }
-        return GitStatusMap(kinds: kinds, changedDirs: dirs)
+        return GitStatusMap(kinds: kinds, changedDirs: dirs, canonicalPaths: canonical.sorted())
     }
 }

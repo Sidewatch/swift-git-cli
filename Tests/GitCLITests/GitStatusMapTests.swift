@@ -24,6 +24,21 @@ final class GitStatusMapTests: XCTestCase {
 
     // MARK: - build: lookups
 
+    /// The changed-file LIST must be canonical: `kinds` keys each file under
+    /// every root alias (/tmp + /private/tmp) for O(1) lookups, but a list with
+    /// one entry per alias doubled search rows and made targeted replace report
+    /// phantom failures.
+    func testChangedFilePathsAreDeduplicatedAcrossRootAliases() {
+        let map = GitStatusMap.build(status: [("src/a.swift", .modified), ("b.swift", .added)],
+                                     repoRoot: root)
+        XCTAssertEqual(map.changedFilePaths.count, 2,
+                       "one entry per FILE, not per root alias: \(map.changedFilePaths)")
+        // Every listed path still resolves through the aliased lookup table.
+        for p in map.changedFilePaths {
+            XCTAssertNotNil(map.kind(for: URL(fileURLWithPath: p)), p)
+        }
+    }
+
     func testKindLookupByAbsolutePath() {
         let map = GitStatusMap.build(status: [("src/main.swift", .modified)], repoRoot: root)
         XCTAssertEqual(map.kind(for: root.appendingPathComponent("src/main.swift")), .modified)
