@@ -39,6 +39,10 @@ public struct GitStatusMap: Equatable, Sendable {
         kinds.isEmpty ? nil : kinds[url.standardizedFileURL.path]
     }
 
+    /// Absolute paths of every changed file — the "search the agent's changes"
+    /// scope. Sorted so consumers get a stable order.
+    public var changedFilePaths: [String] { kinds.keys.sorted() }
+
     /// Whether the directory at `url` contains (at any depth) a changed file.
     public func directoryContainsChanges(_ url: URL) -> Bool {
         !changedDirs.isEmpty && changedDirs.contains(url.standardizedFileURL.path)
