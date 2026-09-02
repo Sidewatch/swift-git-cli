@@ -66,14 +66,19 @@ final class NestedRepoTests: XCTestCase {
     /// path, dots union, and — with a top folder — dots climb to it.
     func testMergeLaysNestedOverOuterAndPropagatesDots() {
         let site = URL(fileURLWithPath: "/site")
-        let outer = GitStatusMap.build(status: [("wp-content/plugins/edd/", .untracked), ("index.php", .modified)],
+        // The outer repo sees the whole plugin as untracked — every file in it "??" —
+        // while the plugin's own repo knows edd.php is a tracked, MODIFIED file.
+        let outer = GitStatusMap.build(status: [("wp-content/plugins/edd/", .untracked),
+                                                ("wp-content/plugins/edd/edd.php", .untracked),
+                                                ("index.php", .modified)],
                                        repoRoot: site)
         let plugin = URL(fileURLWithPath: "/site/wp-content/plugins/edd")
         let inner = GitStatusMap.build(status: [("edd.php", .modified), ("new.php", .untracked)], repoRoot: plugin)
         let merged = GitStatusMap.merge([outer, inner], propagatingTo: site)
 
         XCTAssertEqual(merged.kind(for: URL(fileURLWithPath: "/site/index.php")), .modified)
-        XCTAssertEqual(merged.kind(for: URL(fileURLWithPath: "/site/wp-content/plugins/edd/edd.php")), .modified)
+        XCTAssertEqual(merged.kind(for: URL(fileURLWithPath: "/site/wp-content/plugins/edd/edd.php")), .modified,
+                       "the nested repo's own kind wins over the outer repo's blanket untracked")
         XCTAssertEqual(merged.kind(for: URL(fileURLWithPath: "/site/wp-content/plugins/edd/new.php")), .untracked)
         XCTAssertTrue(merged.directoryContainsChanges(URL(fileURLWithPath: "/site/wp-content/plugins/edd")))
         XCTAssertTrue(merged.directoryContainsChanges(URL(fileURLWithPath: "/site/wp-content/plugins")), "dots climb to the top")
