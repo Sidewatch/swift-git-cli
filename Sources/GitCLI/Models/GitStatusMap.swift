@@ -103,4 +103,34 @@ public struct GitStatusMap: Equatable, Sendable {
         }
         return GitStatusMap(kinds: kinds, changedDirs: dirs, canonicalPaths: canonical.sorted())
     }
+
+    /// One map over several repositories — nested checkouts laid over the folder that
+    /// holds them. Later maps win on a path: pass the outer repo first and the nested
+    /// repos after, so a nested file's real kind replaces the outer repo's blanket
+    /// "untracked directory". Each map's dots stop at its own repo root, so with
+    /// `propagatingTo` set (the opened folder) every changed directory's ancestors up
+    /// to it are dotted too — a changed plugin still lights `wp-content` in the tree.
+    public static func merge(_ maps: [GitStatusMap], propagatingTo top: URL? = nil) -> GitStatusMap {
+        var kinds: [String: GitChangeKind] = [:]
+        var dirs: Set<String> = []
+        var canonical = Set<String>()
+        for m in maps {
+            kinds.merge(m.kinds) { _, newer in newer }
+            dirs.formUnion(m.changedDirs)
+            canonical.formUnion(m.canonicalPaths)
+        }
+        if let top {
+            let topPath = top.standardizedFileURL.path
+            let prefix = topPath.hasSuffix("/") ? topPath : topPath + "/"
+            for dir in dirs where dir.hasPrefix(prefix) {
+                var parent = (dir as NSString).deletingLastPathComponent
+                while parent.count >= topPath.count, !dirs.contains(parent) {
+                    dirs.insert(parent)
+                    if parent == topPath { break }
+                    parent = (parent as NSString).deletingLastPathComponent
+                }
+            }
+        }
+        return GitStatusMap(kinds: kinds, changedDirs: dirs, canonicalPaths: canonical.sorted())
+    }
 }

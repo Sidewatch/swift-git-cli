@@ -130,6 +130,41 @@ public enum Git {
         return URL(fileURLWithPath: out)
     }
 
+    /// Every git repository strictly BELOW `root` — a directory holding a `.git`
+    /// (a directory, or the file a worktree or submodule leaves) — found by walking
+    /// the tree without descending into `.git` itself, into any `skipping` name, or
+    /// past `maxDepth` levels; at most `limit` results, in walk order. `root`'s own
+    /// repo (or the one it sits inside) is ``repoRoot(for:)``'s job and is excluded.
+    ///
+    /// A WordPress site's plugins and libraries are each their own checkout inside a
+    /// folder that is not one. With only the opened folder's repo to go on there was
+    /// none, every git surface hid itself, and no file was ever tinted, badged or
+    /// gutter-diffed. A repo inside a repo is still returned: git treats a nested
+    /// checkout as an opaque untracked directory, and its own status is the truth
+    /// for its files. Walks the disk — call off the main thread.
+    public static func nestedRepoRoots(under root: URL, skipping skip: Set<String>,
+                                       maxDepth: Int = 6, limit: Int = 64) -> [URL] {
+        let fm = FileManager.default
+        guard let en = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey],
+                                     options: [.skipsPackageDescendants]) else { return [] }
+        let rootPath = root.standardizedFileURL.path
+        var out: [URL] = []
+        for case let url as URL in en {
+            let name = url.lastPathComponent
+            let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+            if name == ".git" {
+                let owner = url.deletingLastPathComponent()
+                if owner.standardizedFileURL.path != rootPath { out.append(owner) }
+                if isDir { en.skipDescendants() }
+                if out.count >= limit { break }
+                continue
+            }
+            guard isDir else { continue }
+            if skip.contains(name) || en.level >= maxDepth { en.skipDescendants() }
+        }
+        return out
+    }
+
     /// The path of `file` relative to the repository `root`.
     ///
     /// Falls back to the file's last path component when `file` is not located
