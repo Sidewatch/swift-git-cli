@@ -5,12 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "GitCLI",
-    platforms: [
-        // `Process`-based CLI wrapping is desktop-only, so macOS is the sole target.
-        // Raised from 10.15 to 12 to match swift-subprocess, which this now depends on:
-        // SwiftPM requires a package's floor to be at least its dependencies' floors.
-        .macOS(.v12)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -28,7 +23,7 @@ let package = Package(
             name: "GitCLI",
             dependencies: [.product(name: "Subprocess", package: "swift-subprocess")],
             path: "Sources",
-            swiftSettings: [.unsafeFlags(["-strict-concurrency=complete"])]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "GitCLITests",

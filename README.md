@@ -88,6 +88,12 @@ Git.executable = "/opt/homebrew/bin/git"
 - Actions like `unstage` (`git restore --staged`) require an existing `HEAD` — i.e. a repository with at least one commit. `currentBranch` likewise returns `nil` on an unborn `HEAD`.
 - Escape hatch: `Git.run(_:in:)` runs any raw `git` invocation and returns its stdout (`nil` on failure).
 
+## For agents
+
+Read `CONTRIBUTING.md` first: the folder layout and the PR rules. `swift test` is the whole
+check, and a new test must fail before the change it covers. `CLAUDE.md` / `AGENTS.md` carry a
+module map.
+
 ## License
 
 MIT
