@@ -5,7 +5,7 @@
 //
 
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
 final class WorktreeSummaryTests: XCTestCase {
 

@@ -18,7 +18,7 @@ import Foundation
 /// Build it off-main from ``Git/status(repoRoot:)`` output. Keys are inserted
 /// under every alias of the repo root (standardized, symlink-resolved, and
 /// `/private`-prefixed) so the macOS `/private/var` ↔ `/var` aliasing never
-/// makes a lookup miss — the same gotcha GitCLI's canonical-path handling
+/// makes a lookup miss — the same gotcha GitKit's canonical-path handling
 /// reconciles elsewhere.
 public struct GitStatusMap: Equatable, Sendable {
 
@@ -78,7 +78,7 @@ public struct GitStatusMap: Equatable, Sendable {
         for entry in live {
             // Defensive: without `-uall`, `git status` collapses an untracked
             // directory to a single trailing-slash entry ("?? NewFeature/").
-            // GitCLI passes -uall, but handle the directory form anyway so older
+            // GitKit passes -uall, but handle the directory form anyway so older
             // cached outputs still decorate the folder + its ancestors (a
             // trailing-slash key could never match a lookup path, and
             // `deletingLastPathComponent` on "NewFeature/" returns "" — the entry

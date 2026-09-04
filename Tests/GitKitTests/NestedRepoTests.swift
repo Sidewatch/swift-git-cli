@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
 final class NestedRepoTests: XCTestCase {
 

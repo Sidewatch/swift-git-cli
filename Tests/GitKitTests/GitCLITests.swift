@@ -1,14 +1,14 @@
 //
-//  GitCLITests.swift
+//  GitKitTests.swift
 //  Tests for SwiftGitCLI
 //
 //  Created by David Sherlock on 7/9/26.
 //
 
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
-final class GitCLITests: XCTestCase {
+final class GitKitTests: XCTestCase {
 
     // MARK: - Temp-repo scaffolding
 

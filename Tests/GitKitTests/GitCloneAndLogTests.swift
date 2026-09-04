@@ -1,5 +1,5 @@
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
 final class GitCloneAndLogTests: XCTestCase {
     private var scratch: [URL] = []

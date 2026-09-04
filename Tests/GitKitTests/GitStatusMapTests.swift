@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
 final class GitStatusMapTests: XCTestCase {
 

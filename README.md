@@ -1,4 +1,4 @@
-# Swift Git CLI
+# Swift Git Kit
 
 A thin, synchronous Swift wrapper over the `git` command-line tool — repository status, per-line diff markers, phantom removed-line data for inline diffs, blame, staging actions, branch identity, and worktree enumeration. Pure Foundation, zero dependencies, no libgit2.
 
@@ -32,14 +32,14 @@ A thin, synchronous Swift wrapper over the `git` command-line tool — repositor
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Sidewatch/swift-git-cli.git", from: "1.0.0")
+    .package(url: "https://github.com/Sidewatch/swift-git-kit.git", from: "1.0.0")
 ]
 ```
 
 ## Usage
 
 ```swift
-import GitCLI
+import GitKit
 
 // Locate the repository containing a file.
 guard let root = Git.repoRoot(for: someFileURL) else { return }

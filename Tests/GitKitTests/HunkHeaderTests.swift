@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import GitCLI
+@testable import GitKit
 
 /// Covers ``HunkHeader``, the unified-diff hunk header parser that replaced three
 /// hand-rolled copies. The cases that matter most are the ones the weakest copy got wrong:

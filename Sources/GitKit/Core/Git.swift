@@ -8,15 +8,14 @@
 //
 
 import Foundation
-import Subprocess
-
+import ProcessRunner
 /// A thin wrapper over the `git` command-line tool.
 ///
 /// `Git` is a namespace (a caseless `enum`) — you never instantiate it; call the
 /// static methods directly:
 ///
 /// ```swift
-/// import GitCLI
+/// import GitKit
 ///
 /// guard let root = Git.repoRoot(for: someFileURL) else { return }
 /// for change in Git.status(repoRoot: root) {
@@ -90,13 +89,13 @@ public enum Git {
     /// rather than by flags — chiefly `GIT_INDEX_FILE`, which lets ``createCheckpoint(repoRoot:)``
     /// stage the working tree into a scratch index without disturbing the real one.
     ///
-    /// Delegates to ``Subprocess`` rather than driving `Process` directly. This used to be two
+    /// Delegates to ``ProcessRunner`` rather than driving `Process` directly. This used to be two
     /// near-identical hand-rolled runners differing only in whether they merged an environment,
     /// each carrying its own copy of the "never attach an undrained pipe" reasoning. That
     /// warning was correct and load-bearing — an undrained stderr pipe deadlocks once git
     /// writes ~64 KB of warnings — but a rule re-stated per copy is a rule waiting to be
     /// dropped from the next copy, which is exactly how the deadlock reached `GitHubCLI`.
-    /// `Subprocess` drains both streams concurrently as its only shape, so the trap is
+    /// `ProcessRunner` drains both streams concurrently as its only shape, so the trap is
     /// structurally unavailable here now.
     ///
     /// stderr is still discarded, just at the boundary rather than at the pipe: it is drained
@@ -111,7 +110,7 @@ public enum Git {
     public static func run(_ args: [String], in dir: URL,
                            environment: [String: String],
                            allowedStatuses: Set<Int32> = []) -> String? {
-        let result = Subprocess.run(executable, args,
+        let result = ProcessRunner.run(executable, args,
                                     directory: dir,
                                     environment: environment)
         guard result.launched else { return nil }
