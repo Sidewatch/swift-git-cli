@@ -21,7 +21,7 @@ A thin, synchronous Swift wrapper over the `git` command-line tool — repositor
 ## Requirements
 
 - macOS 14+
-- Swift 6.0+ (Swift 6 language mode)
+- Swift 6.2+ (Swift 6 language mode)
 - A working `git` on disk (defaults to `/usr/bin/git`; override via `Git.executable`)
 
 > **Platform note:** this wraps the `git` binary via `Process`, so it is macOS-only (not iOS/tvOS/watchOS).
