@@ -32,7 +32,7 @@ A thin, synchronous Swift wrapper over the `git` command-line tool — repositor
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Sidewatch/swift-git-kit.git", from: "1.0.0")
+    .package(url: "https://github.com/Sidewatch/swift-git-kit.git", from: "0.1.0")
 ]
 ```
 
