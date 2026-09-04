@@ -12,7 +12,7 @@ A thin, synchronous Swift wrapper over the `git` command-line tool — repositor
 - `Enums/` — enums with no behaviour beyond their cases and labels: GitChangeKind
 - `Internal/` — non-public machinery: Git+Parsing
 - `Models/` — value types — the shape of a thing, nothing else: BlameInfo, GitStatusMap, GitWorktree, HunkHeader, WorktreeSummary
-- `Operations/` — the engine: operations: Git+Actions, Git+Blame, Git+Checkpoint, Git+Clone, Git+Diff, Git+Info, Git+Log, Git+MergeBase, Git+Status, Git+Worktree
+- `Operations/` — the engine: operations: Git+Actions, Git+Blame, Git+Checkpoint, Git+Clone, Git+Diff, Git+Info, Git+Log, Git+MergeBase, Git+Status, Git+Worktree, GitHubCLI
 
 ## Rules
 
