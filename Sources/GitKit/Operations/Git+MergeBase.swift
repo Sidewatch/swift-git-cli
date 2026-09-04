@@ -19,7 +19,7 @@ public extension Git {
     /// - Returns: The merge-base commit, or `nil` when the refs share no history.
     static func mergeBase(with base: String, repoRoot: URL) -> String? {
         guard let out = run(["merge-base", "HEAD", base], in: repoRoot)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !out.isEmpty else { return nil }
+            .trimmed, !out.isEmpty else { return nil }
         return out
     }
 

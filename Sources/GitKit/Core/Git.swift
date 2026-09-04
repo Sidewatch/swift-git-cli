@@ -125,7 +125,7 @@ public enum Git {
     public static func repoRoot(for dir: URL) -> URL? {
         let base = dir.hasDirectoryPath ? dir : dir.deletingLastPathComponent()
         guard let out = run(["rev-parse", "--show-toplevel"], in: base)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !out.isEmpty else { return nil }
+            .trimmed, !out.isEmpty else { return nil }
         return URL(fileURLWithPath: out)
     }
 

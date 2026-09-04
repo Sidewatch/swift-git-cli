@@ -23,11 +23,11 @@ public extension Git {
     ///   git fails (e.g. an unborn `HEAD` in a repository with no commits).
     static func currentBranch(repoRoot root: URL) -> String? {
         guard let name = run(["rev-parse", "--abbrev-ref", "HEAD"], in: root)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else { return nil }
+            .trimmed, !name.isEmpty else { return nil }
         guard name == "HEAD" else { return name }
         // Detached HEAD — identify the checkout by its short commit SHA instead.
         guard let sha = run(["rev-parse", "--short", "HEAD"], in: root)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !sha.isEmpty else { return nil }
+            .trimmed, !sha.isEmpty else { return nil }
         return sha
     }
 

@@ -24,7 +24,7 @@ public extension Git {
     /// - Returns: `.path` = the cloned directory on success; `.error` = git's stderr otherwise.
     static func clone(from url: String, into parent: URL, name: String? = nil) -> CloneResult {
         var args = ["clone", url]
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = name?.trimmed
         if let trimmedName, !trimmedName.isEmpty { args.append(trimmedName) }
 
         let p = Process()
@@ -40,7 +40,7 @@ public extension Git {
         let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
         p.waitUntilExit()
         guard p.terminationStatus == 0 else {
-            let text = (String(data: errData, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = (String(data: errData, encoding: .utf8) ?? "").trimmed
             return CloneResult(path: nil, error: text.isEmpty ? "git clone failed (exit \(p.terminationStatus))" : text)
         }
         let dir = (trimmedName?.isEmpty == false ? trimmedName! : defaultCloneDirectoryName(for: url))
@@ -51,7 +51,7 @@ public extension Git {
     /// URL, minus a trailing `.git`. Handles both `https://…/owner/repo.git` and scp-style
     /// `git@host:owner/repo.git`. Pure — covered by `GitCloneTests`.
     static func defaultCloneDirectoryName(for url: String) -> String {
-        var s = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        var s = url.trimmed
         while s.hasSuffix("/") { s.removeLast() }
         // Take everything after the last "/" or ":" (scp form has no slash before the repo).
         if let cut = s.lastIndex(where: { $0 == "/" || $0 == ":" }) {

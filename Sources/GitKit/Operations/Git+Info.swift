@@ -28,7 +28,7 @@ public extension Git {
     /// `(0, 0)` when there's no upstream or the ref is unknown.
     static func aheadBehind(repoRoot root: URL, ref: String = "@{u}") -> (ahead: Int, behind: Int) {
         guard let out = run(["rev-list", "--left-right", "--count", "HEAD...\(ref)"], in: root) else { return (0, 0) }
-        let parts = out.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = out.trimmed
             .split(whereSeparator: { $0 == " " || $0 == "\t" })
         guard parts.count == 2, let ahead = Int(parts[0]), let behind = Int(parts[1]) else { return (0, 0) }
         return (ahead, behind)
@@ -37,13 +37,13 @@ public extension Git {
     /// The fetch URL of `remote` (default `origin`), or nil if it isn't configured.
     static func remoteURL(repoRoot root: URL, remote: String = "origin") -> String? {
         run(["remote", "get-url", remote], in: root)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmed
     }
 
     /// True when the working tree AND index are clean (nothing to commit).
     static func isClean(repoRoot root: URL) -> Bool {
         (run(["status", "--porcelain"], in: root) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            .trimmed.isEmpty
     }
 
     // MARK: - Write / network (off-main; git's stderr is discarded, so these report only success)

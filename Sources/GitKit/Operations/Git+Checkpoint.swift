@@ -212,7 +212,7 @@ public extension Git {
 
     /// `out` stripped of surrounding whitespace, or `nil` when it is absent or empty.
     private static func trimmed(_ out: String?) -> String? {
-        guard let s = out?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return nil }
+        guard let s = out?.trimmed, !s.isEmpty else { return nil }
         return s
     }
 
