@@ -1,3 +1,12 @@
+//
+//  GitCloneAndLogTests.swift
+//  GitKitTests
+//
+//  GitCloneAndLogTests.
+//
+//  Created by David Sherlock on 7/21/26.
+//
+
 import XCTest
 @testable import GitKit
 

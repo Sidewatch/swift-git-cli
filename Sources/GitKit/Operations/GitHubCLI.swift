@@ -1,3 +1,12 @@
+//
+//  GitHubCLI.swift
+//  GitKit
+//
+//  Thin, best-effort wrapper around the GitHub CLI (`gh`).
+//
+//  Created by David Sherlock on 9/5/26.
+//
+
 import Foundation
 import ProcessRunner
 

@@ -1,3 +1,12 @@
+//
+//  GitHubCLITests.swift
+//  GitKitTests
+//
+//  GitHubCLITests.
+//
+//  Created by David Sherlock on 9/5/26.
+//
+
 import XCTest
 @testable import GitKit
 
