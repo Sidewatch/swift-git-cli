@@ -1,13 +1,18 @@
 //
 //  GitStatusMapTests.swift
-//  Tests for GitStatusMap.build (path keying, ancestor-dir marking, deleted
-//  exclusion, untracked-directory entries) and GitChangeKind.letter. Pure —
-//  build only touches disk to resolve the repo root's symlink aliases.
+//  GitKitTests
+//
+//  Tests for `GitStatusMap` and `GitChangeKind`: porcelain parsing, kind letters, and a build
+//  that only touches disk to resolve the root.
+//
+//  Created by David Sherlock on 7/19/26.
 //
 
 import XCTest
 @testable import GitKit
 
+/// Tests for `GitStatusMap` and `GitChangeKind`: porcelain parsing, kind letters, and a build
+/// that only touches disk to resolve the root.
 final class GitStatusMapTests: XCTestCase {
 
     private let root = URL(fileURLWithPath: "/repo")

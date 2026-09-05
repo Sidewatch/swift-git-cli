@@ -1,8 +1,10 @@
 //
 //  Git+Clone.swift
-//  SwiftGitCLI
+//  GitKit
 //
-//  Clone a remote repository into a local directory.
+//  The outcome of a clone: the created directory on success, or git's error text.
+//
+//  Created by David Sherlock on 7/21/26.
 //
 
 import Foundation

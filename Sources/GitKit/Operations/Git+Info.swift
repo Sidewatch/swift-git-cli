@@ -1,8 +1,11 @@
 //
 //  Git+Info.swift
-//  SwiftGitCLI
+//  GitKit
 //
-//  Branch, upstream, and remote information for a repository.
+//  Local branches, each flagged if it's the checked-out one. `%(HEAD)` is a single leading char
+//  — `*` for the current branch, a space otherwise.
+//
+//  Created by David Sherlock on 7/21/26.
 //
 
 import Foundation

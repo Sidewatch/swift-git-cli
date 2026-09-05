@@ -1,14 +1,18 @@
 //
 //  NestedRepoTests.swift
-//  Tests for Git.nestedRepoRoots (discovery below a folder that is not itself a
-//  repo — skip list, depth cap, the root's own .git excluded, worktree `.git`
-//  files) and GitStatusMap.merge (later wins, dots propagate to the top).
-//  Discovery only looks for `.git` entries, so no real repositories are needed.
+//  GitKitTests
+//
+//  Tests for nested repositories: a child repo's files are not the parent's, and
+//  `GitStatusMap.merge` layers the two status maps.
+//
+//  Created by David Sherlock on 9/2/26.
 //
 
 import XCTest
 @testable import GitKit
 
+/// Tests for nested repositories: a child repo's files are not the parent's, and
+/// `GitStatusMap.merge` layers the two status maps.
 final class NestedRepoTests: XCTestCase {
 
     private var tmp: URL!

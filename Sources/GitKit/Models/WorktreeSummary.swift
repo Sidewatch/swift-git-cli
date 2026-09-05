@@ -1,9 +1,11 @@
 //
 //  WorktreeSummary.swift
-//  SwiftGitCLI
+//  GitKit
 //
-//  A worktree paired with a per-kind tally of its working-tree changes — the
-//  data behind a parallel-agent review rail's cards.
+//  A worktree plus a count of its working-tree changes by kind — enough to draw a review card
+//  ("feature-x · 4 changed") without re-scanning.
+//
+//  Created by David Sherlock on 7/19/26.
 //
 
 import Foundation

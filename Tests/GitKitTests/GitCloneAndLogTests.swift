@@ -2,7 +2,7 @@
 //  GitCloneAndLogTests.swift
 //  GitKitTests
 //
-//  Tests for Git Clone And Log.
+//  Tests for `Git.clone` and the log reader against throwaway repositories.
 //
 //  Created by David Sherlock on 7/21/26.
 //
@@ -10,6 +10,7 @@
 import XCTest
 @testable import GitKit
 
+/// Tests for `Git.clone` and the log reader against throwaway repositories.
 final class GitCloneAndLogTests: XCTestCase {
     private var scratch: [URL] = []
 

@@ -2,7 +2,8 @@
 //  GitHubCLITests.swift
 //  GitKitTests
 //
-//  Tests for Git Hub CLI.
+//  Tests for `GitHubCLI` location: the candidate paths are probed before falling back to
+//  `which`.
 //
 //  Created by David Sherlock on 9/5/26.
 //
@@ -10,6 +11,8 @@
 import XCTest
 @testable import GitKit
 
+/// Tests for `GitHubCLI` location: the candidate paths are probed before falling back to
+/// `which`.
 final class GitHubCLITests: XCTestCase {
     func testProbesTheCandidatePathsBeforeFallingBackToWhich() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("gh-\(UUID().uuidString)")

@@ -1,12 +1,16 @@
 //
 //  WorktreeSummaryTests.swift
-//  Tests for WorktreeSummary.make (pure per-kind tally) and the
-//  Git.worktreeSummaries integration convenience against a throwaway repo.
+//  GitKitTests
+//
+//  Tests for the worktree summary: main and feature worktrees, their branches and labels.
+//
+//  Created by David Sherlock on 7/19/26.
 //
 
 import XCTest
 @testable import GitKit
 
+/// Tests for the worktree summary: main and feature worktrees, their branches and labels.
 final class WorktreeSummaryTests: XCTestCase {
 
     private var scratchDirs: [URL] = []

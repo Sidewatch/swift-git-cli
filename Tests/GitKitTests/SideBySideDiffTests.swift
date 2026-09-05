@@ -10,6 +10,8 @@
 import XCTest
 @testable import GitKit
 
+/// Tests for `SideBySideDiff.rows(from:)`: a unified diff becomes paired rows with context,
+/// removals and additions aligned.
 final class SideBySideDiffTests: XCTestCase {
 
     private let diff = """

@@ -2,12 +2,19 @@
 //  GitCheckpointTests.swift
 //  Tests for SwiftGitCLI
 //
+//  Tests for `Git.createCheckpoint` and friends: a dangling commit that includes untracked
+//  files, anchored under `refs/sidewatch/checkpoints`, with no side effect on the worktree,
+//  index or stash.
+//
 //  Created by David Sherlock on 7/25/26.
 //
 
 import XCTest
 @testable import GitKit
 
+/// Tests for `Git.createCheckpoint` and friends: a dangling commit that includes untracked
+/// files, anchored under `refs/sidewatch/checkpoints`, with no side effect on the worktree,
+/// index or stash.
 final class GitCheckpointTests: XCTestCase {
 
     // MARK: - Temp-repo scaffolding

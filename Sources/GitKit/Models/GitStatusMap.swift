@@ -1,8 +1,12 @@
 //
 //  GitStatusMap.swift
-//  SwiftGitCLI
+//  GitKit
 //
-//  A snapshot of `git status` shaped for O(1) per-path lookups.
+//  A snapshot of `git status` shaped for O(1) per-row lookups by a file tree or a tab bar:
+//  absolute file path → change kind, plus the set of every ancestor directory of a changed file
+//  (so a collapsed folder can show a "contains changes" dot).
+//
+//  Created by David Sherlock on 7/19/26.
 //
 
 import Foundation

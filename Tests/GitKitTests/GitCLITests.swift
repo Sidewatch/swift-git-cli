@@ -1,6 +1,9 @@
 //
-//  GitKitTests.swift
-//  Tests for SwiftGitCLI
+//  GitCLITests.swift
+//  GitKitTests
+//
+//  Tests for the core `Git` operations against throwaway repositories: status, diff, line
+//  changes, branches and blame.
 //
 //  Created by David Sherlock on 7/9/26.
 //
@@ -8,6 +11,8 @@
 import XCTest
 @testable import GitKit
 
+/// Tests for the core `Git` operations against throwaway repositories: status, diff, line
+/// changes, branches and blame.
 final class GitKitTests: XCTestCase {
 
     // MARK: - Temp-repo scaffolding

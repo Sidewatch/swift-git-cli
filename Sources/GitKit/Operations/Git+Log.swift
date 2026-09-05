@@ -1,8 +1,10 @@
 //
 //  Git+Log.swift
-//  SwiftGitCLI
+//  GitKit
 //
-//  Commit history for the History panel.
+//  One commit from `git log`.
+//
+//  Created by David Sherlock on 7/21/26.
 //
 
 import Foundation
