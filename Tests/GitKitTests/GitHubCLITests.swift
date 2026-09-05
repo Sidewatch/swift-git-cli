@@ -2,7 +2,7 @@
 //  GitHubCLITests.swift
 //  GitKitTests
 //
-//  GitHubCLITests.
+//  Tests for Git Hub CLI.
 //
 //  Created by David Sherlock on 9/5/26.
 //

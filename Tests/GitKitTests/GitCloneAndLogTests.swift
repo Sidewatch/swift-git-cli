@@ -2,7 +2,7 @@
 //  GitCloneAndLogTests.swift
 //  GitKitTests
 //
-//  GitCloneAndLogTests.
+//  Tests for Git Clone And Log.
 //
 //  Created by David Sherlock on 7/21/26.
 //
