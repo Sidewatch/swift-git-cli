@@ -8,10 +8,10 @@ A thin, synchronous Swift wrapper over the `git` command-line tool — repositor
 
 ## Module map
 
-- `Core/` — the engine: Git
+- `Core/` — the engine: Git, SideBySideDiff
 - `Enums/` — enums with no behaviour beyond their cases and labels: GitChangeKind
 - `Internal/` — non-public machinery: Git+Parsing
-- `Models/` — value types — the shape of a thing, nothing else: BlameInfo, GitStatusMap, GitWorktree, HunkHeader, WorktreeSummary
+- `Models/` — value types — the shape of a thing, nothing else: BlameInfo, GitStatusMap, GitWorktree, HunkHeader, WorktreeSummary, SideBySideRow
 - `Operations/` — the engine: operations: Git+Actions, Git+Blame, Git+Checkpoint, Git+Clone, Git+Diff, Git+Info, Git+Log, Git+MergeBase, Git+Status, Git+Worktree, GitHubCLI
 
 ## Rules
